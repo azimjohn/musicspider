@@ -1,2 +1,1 @@
-# musicspider
-MusicSpider API
+# MusicSpider API
