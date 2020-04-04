@@ -17,7 +17,8 @@ def search():
             "id": 1,
             "image": "",
             "name": "Good For You",
-            "artist": "Selena Gomez"
+            "artist": "Selena Gomez",
+            "source": "https://z1.fm/download/14508776",
         }]
     })
 
@@ -29,8 +30,14 @@ def get_song(id):
         "source": "https://z1.fm/download/14508776",
         "image": "",
         "name": "Good For You",
-        "artist": "Selena Gomez"
+        "artist": "Selena Gomez",
     })
+
+@app.route('/play/')
+def play():
+    return """
+        <audio src="https://z1.fm/download/14508776" controls="controls"></audio>
+    """
 
 
 if __name__ == '__main__':
