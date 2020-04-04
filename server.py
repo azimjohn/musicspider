@@ -12,6 +12,7 @@ def search():
     search = request.args.get('search') 
     return jsonify({
         "next": None,
+        "count": 1,
         "search": search, "results": [{
             "id": 1,
             "image": "",
