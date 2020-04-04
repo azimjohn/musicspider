@@ -10,7 +10,26 @@ def healthz():
 @app.route('/api/music/')
 def search():
     search = request.args.get('search') 
-    return jsonify({"search": search,"results": []})
+    return jsonify({
+        "next": None,
+        "search": search, "results": [{
+            "id": 1,
+            "image": "",
+            "name": "Good For You",
+            "artist": "Selena Gomez"
+        }]
+    })
+
+
+@app.route('/api/music/<int:id>/')
+def get_song(id):
+    return jsonify({
+        "id": 1,
+        "source": "https://z1.fm/download/14508776",
+        "image": "",
+        "name": "Good For You",
+        "artist": "Selena Gomez"
+    })
 
 
 if __name__ == '__main__':
