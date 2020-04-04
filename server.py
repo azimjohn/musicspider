@@ -26,7 +26,7 @@ def healthz():
 
 
 @app.route('/api/music/')
-def search():
+def search_handler():
     query = request.args.get('search')
     songs = search(query)
     return jsonify({
@@ -37,7 +37,7 @@ def search():
 
 
 @app.route('/api/music/<int:id>/')
-def get_song(id):
+def get_song_handler(id):
     song = es.get(index="songs", id=id)
     return jsonify(song['_source'])
 
