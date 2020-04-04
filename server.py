@@ -9,7 +9,7 @@ def search(text):
     songs = []
     result = es.search(index='songs', body={
         "from": 0, "size": 100, "query": {
-            "match": {"name": text}
+            "multi_match": {"query": text, "fields": ["name", "artist"]}
         }
     })
 
