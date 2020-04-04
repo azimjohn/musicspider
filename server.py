@@ -14,7 +14,7 @@ def search(text):
     })
 
     for song in result['hits']['hits']:
-        song['_source']['id'] = song['_id']
+        song['_source']['id'] = int(song['_id'])
         songs.append(song['_source'])
 
     return songs
@@ -39,7 +39,7 @@ def search_handler():
 @app.route('/api/music/<int:id>/')
 def get_song_handler(id):
     song = es.get(index="songs", id=id)
-    song['_source']['id'] = song['_id']
+    song['_source']['id'] = int(song['_id'])
     return jsonify(song['_source'])
 
 
