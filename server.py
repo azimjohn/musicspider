@@ -5,6 +5,21 @@ es = Elasticsearch()
 app = Flask(__name__)
 
 
+def search(text):
+    songs = []
+    result = es.search(index='songs', body={
+        "from": 0, "size": 100, "query": {
+            "match": {"name": text}
+        }
+    })
+
+    for song in result['hits']['hits']:
+        song['_source']['id'] = song['_id']
+        songs.append(song['_source'])
+
+    return songs
+
+
 @app.route('/')
 def healthz():
     return jsonify({'healthy': True})
@@ -12,30 +27,19 @@ def healthz():
 
 @app.route('/api/music/')
 def search():
-    search = request.args.get('search')
-    results = es.search(
-        index='songs',
-        body={
-            "from": 0, "size": 100, "query": {
-                "match": {"name": search}
-            }
-        })
+    query = request.args.get('search')
+    songs = search(query)
     return jsonify({
         "next": None,
-        "count": results["_shards"]["total"],
-        "search": search, "results": [doc['_source'] for doc in results["hits"]["hits"]]
+        "count": len(songs),
+        "results": songs
     })
 
 
 @app.route('/api/music/<int:id>/')
 def get_song(id):
-    return jsonify({
-        "id": 1,
-        "source": "https://z1.fm/download/14508776",
-        "image": "",
-        "name": "Good For You",
-        "artist": "Selena Gomez",
-    })
+    song = es.get(index="songs", id=id)
+    return jsonify(song['_source'])
 
 
 if __name__ == '__main__':
