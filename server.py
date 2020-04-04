@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
+from elasticsearch import Elasticsearch
 
+es = Elasticsearch()
 app = Flask(__name__)
+
 
 @app.route('/')
 def healthz():
@@ -9,17 +12,18 @@ def healthz():
 
 @app.route('/api/music/')
 def search():
-    search = request.args.get('search') 
+    search = request.args.get('search')
+    results = es.search(
+        index='songs',
+        body={
+            "from": 0, "size": 100, "query": {
+                "match": {"name": search}
+            }
+        })
     return jsonify({
         "next": None,
-        "count": 1,
-        "search": search, "results": [{
-            "id": 1,
-            "image": "",
-            "name": "Good For You",
-            "artist": "Selena Gomez",
-            "source": "https://z1.fm/download/14508776",
-        }]
+        "count": results["_shards"]["total"],
+        "search": search, "results": [doc['_source'] for doc in results["hits"]["hits"]]
     })
 
 
@@ -32,12 +36,6 @@ def get_song(id):
         "name": "Good For You",
         "artist": "Selena Gomez",
     })
-
-@app.route('/play/')
-def play():
-    return """
-        <audio src="https://z1.fm/download/14508776" controls="controls"></audio>
-    """
 
 
 if __name__ == '__main__':
