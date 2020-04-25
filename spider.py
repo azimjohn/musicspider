@@ -1,16 +1,18 @@
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
 import psycopg2
 
 
 base_url = "https://z1.fm/"
-bot_token = "secret_bot_token"
+bot_token = "your_bot_token"
 telegram_url = "https://api.telegram.org/bot"+ bot_token +"/sendMessage?chat_id=@musicspider&text={}"
 
 hostname = 'localhost'
 username = 'developer'
-password = 'secret'
+password = 'your_db_password'
 database = 'musicspider'
 
 mydb = psycopg2.connect( host=hostname, user=username, password=password, dbname=database )
@@ -18,9 +20,28 @@ mydb = psycopg2.connect( host=hostname, user=username, password=password, dbname
 session = requests.session()
 session.headers.update({'user-Agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept': '*/*', 'Connection': 'keep-alive', 'origin': 'https://z1.fm'})
 
+def requests_retry_session(
+    retries=5,
+    backoff_factor=0.4,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
 def get_letters(base_url):
 
-    index = session.get(base_url)
+    index = requests_retry_session(session=session).get(base_url,timeout=5)
 
     if(index.status_code != 200):
         pass
@@ -37,7 +58,7 @@ def get_letters(base_url):
 
 def get_artists_list(letter_url):
 
-    html = session.get(letter_url)
+    html = requests_retry_session(session=session).get(letter_url,timeout=5)
     parsed = bs(html.text,"lxml")
     artists_list = []
     artists = parsed.select("div.songs-list-item div.song-wrap-xl div.song-xl a.song-play")
@@ -54,7 +75,7 @@ def get_artists_list(letter_url):
 
 def get_artist_songs(artist_url):
 
-    html = session.get(artist_url)
+    html = requests_retry_session(session=session).get(artist_url,timeout=5)
     parsed = bs(html.text,"lxml")
     artist_songs = []
     songs = parsed.select("div.songs-list-item div.song-wrap-xl div.song-xl")
@@ -84,35 +105,61 @@ def add_song(artist,song_name,image,source,base):
 def crawl(base_url):
 
     letters = get_letters(base_url)
+
     for letter in letters:
-        session.get(telegram_url.format("Started crawling letter "+letter+" 😎😎"))
-        # print("Letter url: "+letter)
+
+        requests_retry_session(session=session).get(telegram_url.format("Started crawling letter "+letter+" 😎😎"),timeout=5)
+        print("Letter url: "+letter)
         i = 1
         check = True
+        letter_disabled_btn_flag = False
         while(check):
-            letter_url = letter + "?page=" + str(i)
-            # print("Letter page: "+str(i))
-            if(requests.get(letter_url).status_code != 200):
+            if letter_disabled_btn_flag:
                 break
+
+            letter_url = letter + "?page=" + str(i)
+            print("Letter page: "+str(i))
+            letter_html = requests_retry_session(session=session).get(letter_url, timeout=5)
+            i = i + 1
+            
+            if(letter_html.status_code != 200):
+                break
+
+            letter_parsed = bs(letter_html.text,"lxml")
+            next_btn = letter_parsed.select_one("div.paging")
+            if next_btn:
+                if(next_btn.select_one("a.next.disabled") is not None):
+                    pprint("Next btn disabled")
+                    letter_disabled_btn_flag = True
+            else:
+                check = False
+
             letter_artists = get_artists_list(letter_url)
             for artist in letter_artists:
                 j = 1
                 checkIn = True
                 disabled_btn_flag = False
                 while(checkIn):
+                    # Number of artist pages to crawl
+                    if j > 2:
+                        break
+
                     if disabled_btn_flag:
                         break
 
                     artist_url = base_url + artist["artist_url"] + "?sort=view&page=" + str(j)
-                    artist_html = session.get(artist_url)
+                    artist_html = requests_retry_session(session=session).get(artist_url,timeout=5)
                     if(artist_html.status_code != 200):
                         break
                         
                     artist_parsed = bs(artist_html.text,"lxml")
                     next_btn = artist_parsed.select_one("div.paging")
+
                     if next_btn:
                         if(next_btn.select_one("a.next.disabled") is not None):
                             disabled_btn_flag = True
+                    else:
+                        checkIn = False
 
                     artist_songs = artist_parsed.select("div.songs-list-item div.song-wrap-xl div.song-xl")
                     if not artist_songs:
@@ -123,11 +170,11 @@ def crawl(base_url):
                         add_song(song["artist_name"],song["song_name"],artist["image"],song["song_url"],artist_url)
                     j = j + 1
                 #break # 1 artist
-            i = i + 1
             #break # 1 artist page
-        session.get(telegram_url.format("Finished crawling letter "+letter+" 😎😎"))
+        requests_retry_session(session=session).get(telegram_url.format("Finished crawling letter "+letter+" 😎😎"),timeout=5)
         #break # 1 letter
-    session.get(telegram_url.format("Finished successfully 🎉🥳"))
+    requests_retry_session(session=session).get(telegram_url.format("Finished successfully 🎉🥳"),timeout=5)
 
 if __name__ == '__main__':
     crawl(base_url)
+
