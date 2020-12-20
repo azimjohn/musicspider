@@ -18,9 +18,9 @@ def search_z1(query):
     for song in songs_elem:
         songs.append(
             {
-                "artist_name" : song.select_one("div.song-content div.song-artist a").text.strip(),
-                "song_name" : song.select_one("div.song-content div.song-name a").text.strip(),
-                "song_url" : "https://z1.fm/download/"+song.get("data-play")
+                "artist" : song.select_one("div.song-content div.song-artist a").text.strip(),
+                "name" : song.select_one("div.song-content div.song-name a").text.strip(),
+                "source" : "https://z1.fm/download/"+song.get("data-play")
             }
         )
 
