@@ -1,23 +1,7 @@
+import spider
 from flask import Flask, jsonify, request
-from elasticsearch import Elasticsearch
 
-es = Elasticsearch()
 app = Flask(__name__)
-
-
-def search(text):
-    songs = []
-    result = es.search(index='songs', body={
-        "from": 0, "size": 100, "query": {
-            "multi_match": {"query": text, "fields": ["name", "artist"]}
-        }
-    })
-
-    for song in result['hits']['hits']:
-        song['_source']['id'] = int(song['_id'])
-        songs.append(song['_source'])
-
-    return songs
 
 
 @app.route('/')
@@ -28,7 +12,7 @@ def healthz():
 @app.route('/api/music/')
 def search_handler():
     query = request.args.get('search')
-    songs = search(query)
+    songs = spider.search_z1(query)
     return jsonify({
         "next": None,
         "count": len(songs),
