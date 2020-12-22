@@ -37,7 +37,7 @@ def google_action():
     else:
         message = "No song found"
 
-    return jsonify(prepare_reponse(message, songs[:5]))
+    return jsonify(prepare_reponse(message, songs[:1]))
 
 
 if __name__ == '__main__':
