@@ -4,11 +4,47 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 
-@app.route('/')
-def healthz():
-    return jsonify({'healthy': True})
+response = {
+  "session": {
+    "id": "session_id",
+    "params": {},
+    "languageCode": ""
+  },
+  "prompt": {
+    "override": False,
+    "content": {
+      "media": {
+        "mediaObjects": [],
+        "mediaType": "AUDIO",
+      }
+    },
+    "firstSimple": {
+      "speech": ""
+    }
+  }
+}
 
 
+@app.route('/google-action', methods=['POST'])
+def google_action():
+    query = request.json['intent']['query']
+    query = query.replace("Play", "").replace("play", "")
+
+    songs = spider.search_z1(query)
+
+    media = [{"name": song["name"], "url": song["source"]} for song in songs[:1]]
+    response["prompt"]["content"]["media"]["mediaObjects"] = media
+
+    if len(songs) > 0:
+        message = f"Playing {query} from MusicSpider"
+    else:
+        message = "No song found"
+
+    response["prompt"]["firstSimple"]["speech"] = message
+
+    return jsonify(response)
+
+"""
 @app.route('/api/music/')
 def search_handler():
     query = request.args.get('search')
@@ -18,13 +54,7 @@ def search_handler():
         "count": len(songs),
         "results": songs
     })
-
-
-@app.route('/api/music/<int:id>/')
-def get_song_handler(id):
-    song = es.get(index="songs", id=id)
-    song['_source']['id'] = int(song['_id'])
-    return jsonify(song['_source'])
+"""
 
 
 if __name__ == '__main__':
