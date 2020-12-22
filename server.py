@@ -6,11 +6,6 @@ app = Flask(__name__)
 
 def prepare_reponse(message, songs):
   return {
-    "session": {
-      "id": "session_id",
-      "params": {},
-      "languageCode": ""
-    },
     "prompt": {
       "override": False,
       "content": {
