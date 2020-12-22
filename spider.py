@@ -8,7 +8,7 @@ session.headers.update({'user-Agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) 
 session.get("https://z1.fm")
 
 
-def search_z1(query):
+def search(query):
     url = f"https://z1.fm/mp3/search?keywords={query}&sort=views"
     html = session.get(url)
     parsed = bs(html.text, "lxml")
@@ -16,11 +16,15 @@ def search_z1(query):
     songs_elem = parsed.select("div.songs-list-item div.song-wrap-xl div.song-xl")
 
     for song in songs_elem:
+        name = song.select_one("div.song-content div.song-name a").text.strip()
+        if "edit" in name.lower() or "remix" in name.lower():
+            continue
+
         songs.append(
             {
-                "artist" : song.select_one("div.song-content div.song-artist a").text.strip(),
-                "name" : song.select_one("div.song-content div.song-name a").text.strip(),
-                "source" : "https://z1.fm/download/"+song.get("data-play")
+                # "artist" : song.select_one("div.song-content div.song-artist a").text.strip(),
+                "name" : name,
+                "url" : "https://z1.fm/download/"+song.get("data-play")
             }
         )
 
